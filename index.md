@@ -2,6 +2,41 @@
 title: Net::HTTP Basics
 ---
 
+A bunch of examples of various use cases with Ruby's builtin `Net::HTTP` library.
+
+
+
+## Univeral Resource Identifiers (URIs) <!-- uri.rb -->
+
+``` ruby
+require "uri"
+
+uri = URI.parse("http://mysite.com/some_api")
+uri = URI.parse("https://mysite.com/thing?foo=bar")
+
+# URI will also guess the correct port
+URI.parse("http://foo.com").port # => 80
+URI.parse("https://foo.com/").port # => 443
+
+# Full reference
+uri = URI.parse("http://foo.com/this/is/everything?query=params")
+# p (uri.methods - Object.methods).sort
+p uri.scheme        # => "http"
+p uri.host          # => "foo.com"
+p uri.port          # => 80
+p uri.request_uri   # => "/this/is/everything?query=params"
+p uri.path          # => "/this/is/everything"
+p uri.query         # => "query=params"
+
+# There are setters as well
+uri.port = 8080
+uri.host = "google.com"
+uri.scheme = "ftp"
+p uri.to_s
+# => "ftp://google.com:8080/this/is/everything?query=param"
+```
+
+
 
 
 ## Standard HTTP Request   <!-- normal.rb -->
@@ -24,19 +59,16 @@ response = http.request(Net::HTTP::Get.new(uri.request_uri))
 ```
 
 
-## Basic Auth   <!-- basic_auth.rb -->
+## Without URI       <!-- without_uri.rb -->
 
 ``` ruby
+# You don't have to use URI.parse
 require "net/http"
-require "uri"
 
-uri = URI.parse("http://google.com/")
-
-http = Net::HTTP.new(uri.host, uri.port)
-request = Net::HTTP::Get.new(uri.request_uri)
-request.basic_auth("username", "password")
-response = http.request(request)
+http = Net::HTTP.new("google.com", 80)
+response = http.request(Net::HTTP::Get.new("/foo/bar"))
 ```
+
 
 ## Dealing with Response Objects   <!-- responses.rb -->
 
@@ -64,6 +96,134 @@ response.each_header { |h| do_something(h, response[h]) } # => location = http:/
 ```
 
 
+## Headers     <!-- headers.rb -->
+
+``` ruby
+require "net/http"
+require "uri"
+
+uri = URI.parse("http://google.com/")
+http = Net::HTTP.new(uri.host, uri.port)
+
+request = Net::HTTP::Get.new(uri.request_uri)
+request["User-Agent"] = "My Ruby Script"
+request["Accept"] = "*/*"
+
+response = http.request(request)
+
+# Get specific header
+response["content-type"]
+# => "text/html; charset=UTF-8"
+
+# Iterate all response headers.
+response.each_header do |key, value|
+  p "#{key} => #{value}"
+end
+# => "location => http://www.google.com/"
+# => "content-type => text/html; charset=UTF-8"
+# ...
+
+# Alternatively, reach into private APIs.
+p response.instance_variable_get("@header")
+# => {"location"=>["http://www.google.com/"], "content-type"=>["text/html; charset=UTF-8"], ...}
+```
+
+
+## Cookies   <!-- cookies.rb -->
+
+``` ruby
+require "net/http"
+require "uri"
+
+uri = URI.parse("http://translate.google.com/")
+http = Net::HTTP.new(uri.host, uri.port)
+
+# make first call to get cookies
+request = Net::HTTP::Get.new(uri.request_uri)
+
+response = http.request(request)
+
+# save cookies
+cookies = response.response['set-cookie']  
+
+
+# make second call
+request = Net::HTTP::Get.new('/#auto|en|Pardon')
+
+# add previously stored cookies
+request['Cookie'] = cookies
+
+response = http.request(request)
+
+cookies = response.response['set-cookie'] # => nil
+```
+
+
+## Basic Auth   <!-- basic_auth.rb -->
+
+``` ruby
+require "net/http"
+require "uri"
+
+uri = URI.parse("http://google.com/")
+
+http = Net::HTTP.new(uri.host, uri.port)
+request = Net::HTTP::Get.new(uri.request_uri)
+request.basic_auth("username", "password")
+response = http.request(request)
+```
+
+
+## Proxy   <!-- proxy.rb -->
+
+``` ruby
+require 'net/http'
+require 'uri'
+
+uri = URI.parse('http://google.com')
+
+# Net::HTTP will automatically create a proxy from the http_proxy environment variable if it is present.
+ENV['http_proxy'] # => "http://myproxy.com:8080"
+
+http = Net::HTTP.new(uri.host, uri.port)
+
+# This request uses proxy.
+request = Net::HTTP::Get.new(uri.request_uri)
+response = http.request(request)
+
+# But it does not work without a Net::HTTP object.
+# This request doest not use proxy.
+response = Net::HTTP.get_response(uri)
+
+
+# You can pass proxy address to Net::HTTP constructor too.
+proxy_uri = URI.parse('http://myproxy.com:8080')
+
+http = Net::HTTP.new(uri.host, uri.port, proxy_uri.host, proxy_uri.port)
+
+request = Net::HTTP::Get.new(uri.request_uri)
+response = http.request(request)
+
+
+# If you are using an authenticated proxy, use Net::HTTP.start method.
+Net::HTTP.start(uri.host, uri.port, proxy_uri.host, proxy_uri.port, 'proxy_user', 'proxy_pass') do |http|
+  request = Net::HTTP::Get.new(uri.request_uri)
+  response = http.request(request)
+end
+
+# If you want to reuse Net::HTTP instance, don't forget to finish HTTP connection.
+http = Net::HTTP.start(uri.host, uri.port, proxy_uri.host, proxy_uri.port, 'proxy_user', 'proxy_pass').start
+
+request = Net::HTTP::Get.new(uri.request_uri)
+response = http.request(request)
+
+# Finish HTTP connection.
+http.finish if http.started?
+```
+
+
+
+
 ## POST Form Request  <!--  post_form.rb -->
 
 ``` ruby
@@ -81,7 +241,7 @@ http = Net::HTTP.new(uri.host, uri.port)
 request = Net::HTTP::Post.new(uri.request_uri)
 request.set_form_data({"q" => "My query", "per_page" => "50"})
 
-# Tweak headers, removing this will default to application/x-www-form-urlencoded 
+# Tweak headers, removing this will default to application/x-www-form-urlencoded
 request["Content-Type"] = "application/json"
 
 response = http.request(request)
@@ -227,4 +387,76 @@ response = http.request(request)
 
 request = Net::HTTP::Delete.new("/users/1")
 response = http.request(request)
+```
+
+
+## Your Own Custom HTTP Method / Verb     <!-- custom_verb.rb -->
+
+```ruby
+require "net/http"
+
+# Varnish uses a custom PURGE verb. A simple subclass is all it takes for
+# Net::HTTP to send requests with this method.
+
+class Purge < Net::HTTPRequest
+  METHOD = "PURGE"
+  REQUEST_HAS_BODY = false
+  RESPONSE_HAS_BODY = false
+end
+
+http = Net::HTTP.new("localhost", "80")
+response = http.request(Purge.new("/"))
+```
+
+
+## Timeout   <!-- timeout.rb -->
+
+``` ruby
+require "net/http"
+require "uri"
+
+uri = URI.parse("http://google.com/")
+
+http = Net::HTTP.new(uri.host, uri.port)
+http.open_timeout = 3 # in seconds
+http.read_timeout = 3 # in seconds
+http.request(Net::HTTP::Get.new(uri.request_uri))
+```
+
+
+## Logging and Debugging   <!-- logging_and_debuggin.rb -->
+
+``` ruby
+require "net/http"
+require "uri"
+
+uri = URI.parse("http://google.com/")
+http = Net::HTTP.new(uri.host, uri.port)
+
+http.set_debug_output($stdout)
+# or
+http.set_debug_output($stderr)
+# or
+require "logger"
+http.set_debug_output(Logger.new("/path/to/my.log"))
+
+response = http.request(Net::HTTP::Get.new(uri.request_uri))
+```
+
+
+## Asynchronous   <!-- asynchronous.rb -->
+
+``` ruby
+# All the APIs in Net::HTTP are synchronous.
+# We have to use threads.
+
+require "net/http"
+require "uri"
+
+Thread.new do
+  # Do normal Net::HTTP stuff here.
+  uri = URI.parse("http://google.com/")
+  http = Net::HTTP.new(uri.host, uri.port)
+  response = http.request(Net::HTTP::Get.new(uri.request_uri))
+end.join
 ```
