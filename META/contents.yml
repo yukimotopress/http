@@ -1,0 +1,31 @@
+######################
+#  Table of Contents
+
+- title: "Net::HTTP Basics"
+  path:  index.md
+  sections:
+  - title: Univeral Resource Identifiers (URIs)
+  - title: Standard HTTP Request
+  - title: Without URI
+  - title: Dealing with Response Objects
+  - title: Headers
+  - title: Cookies
+  - title: Basic Auth
+  - title: Proxy
+  - title: POST Form Request
+  - title: 'File Upload - HTML Style (w/ input type="file")'
+  - title: SSL/HTTPS Request
+  - title: HTTP POST / GET / PUT / DELETE Methods
+  - title: Your Own Custom HTTP Method / Verb
+  - title: Timeout
+  - title: Logging and Debugging
+  - title: Asynchronous
+
+- title: Case Study - Fetcher HTTP Library (Incl. Redirects, Caching 'n' More)
+  path:  fetcher.md
+  sections:
+  - title: Copy (to File)
+  - title: Read (into String)
+  - title: Get (HTTP Response)
+  - title: Command Line
+  - title: Source

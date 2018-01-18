@@ -7,7 +7,7 @@ This is the original source reformatted in a single-page book edition (using the
 
 
 - [Net::HTTP Basics](index.md)
-- [Case Study - Fetcher HTTP Library Incl. Redirects, Caching 'n' More](fetcher.md)
+- [Case Study - Fetcher HTTP Library (Incl. Redirects, Caching 'n' More)](fetcher.md)
 
 
 

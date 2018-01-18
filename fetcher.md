@@ -1,5 +1,5 @@
 ---
-title: Case Study - Fetcher HTTP Library Incl. Redirects, Caching 'n' More
+title: Case Study - Fetcher HTTP Library (Incl. Redirects, Caching 'n' More)
 ---
 
 
@@ -296,4 +296,4 @@ module Fetcher
 end  # module Fetcher
 ```
 
-Source: [rubylibs/fetcher/lib/fetcher/worker.rb](https://github.com/rubylibs/fetcher/blob/master/lib/fetcher/worker.rb)
+(Source: [rubylibs/fetcher/lib/fetcher/worker.rb](https://github.com/rubylibs/fetcher/blob/master/lib/fetcher/worker.rb))

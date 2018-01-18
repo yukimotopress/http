@@ -248,7 +248,7 @@ response = http.request(request)
 ```
 
 
-## File Upload - HTML Style w/ input type="file"   <!-- file_upload_html_style  -->
+## File Upload - HTML Style (w/ input type="file")   <!-- file_upload_html_style  -->
 
 ``` ruby
 require "net/http"
